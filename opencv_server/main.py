@@ -32,7 +32,10 @@ def get_features():
 def init_db(cursor):
     delete_sql = "DROP TABLE notes;"
     table_sql = "CREATE TABLE notes (name TEXT PRIMARY KEY);"
-    cursor.execute(delete_sql)
+    try:
+        cursor.execute(delete_sql)
+    except:
+        pass
     cursor.execute(table_sql)
     return "OK"
 
