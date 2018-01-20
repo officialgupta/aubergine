@@ -1,5 +1,6 @@
 from flask import Flask, request
 import sqlite3
+import requests
 
 app = Flask(__name__)
 
@@ -16,6 +17,21 @@ def database_connection(function):
         return res
     wrap.__name__ = function.__name__
     return wrap
+
+def get_handwriting(img_bytes):
+    headers = {'Content-Type': 'application/octet-stream', 'Ocp-Apim-Subscription-Key': '4edb8729e3ef4a5cb18b46ca5f5fdcaf'}
+    url = "https://westeurope.api.cognitive.microsoft.com/vision/v1.0/recognizeText"
+    r = requests.post(url, data=img_bytes, headers=headers)
+    if r.status_code != 202:
+        raise Exception("Bad response from recognizeText: {}".format(r.status_code))
+    operation_location = r.headers["Operation-Location"]
+    # allow prcoessing time
+    time.sleep(3)
+    headers = {'Ocp-Apim-Subscription-Key': '4edb8729e3ef4a5cb18b46ca5f5fdcaf'}
+    r = requests.get(operation_location, headers=headers)
+    if r.status_code != 200:
+        raise Exception("Bad status code from operation location: {}".format(r.status_code))
+    return r.content
 
 @app.route("/")
 def index():
