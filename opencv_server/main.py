@@ -25,13 +25,18 @@ def index():
 def get_features():
     # assume that request has base64 encoded jpg
     b64str = request.form["image"]
-    return b64str
+    # calculate the index based on the image - Cameron
+    # send back the name, index, associations
+
+    json = { name: "Hello", link: "blup.com" }
+
+    return json
 
 @app.route("/initdb")
 @database_connection
 def init_db(cursor):
     delete_sql = "DROP TABLE notes;"
-    table_sql = "CREATE TABLE notes (name TEXT PRIMARY KEY);"
+    table_sql = "CREATE TABLE notes (name TEXT PRIMARY KEY, image BLOB);"
     try:
         cursor.execute(delete_sql)
     except:
@@ -43,7 +48,8 @@ def init_db(cursor):
 @database_connection
 def create_note(cursor):
     b64img = request.form["image"]
-    cursor.execute("INSERT INTO notes VALUES ('" + b64img + "');")
+    note_name = request.form["name"]
+    cursor.execute("INSERT INTO notes VALUES ('" + note_name + ',' + b64img + "');")
     return "OK"
 
 if __name__ == "__main__":
