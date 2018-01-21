@@ -118,9 +118,11 @@ def find_note(cursor):
     return goodest_name + ":" + annotations
 
 @app.route("/addannotation/<noteid>/<annotation>")
-@database_connection
-def add_annotation(cursor, noteid, annotation):
-    cursor.execute("UPDATE notes SET annotations=? WHERE name=?;", [annotation, noteid])
+def add_annotation(noteid, annotation):
+        with connect_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE notes SET annotations=? WHERE name=?;", [annotation, noteid])
+            conn.commit()
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5001)
