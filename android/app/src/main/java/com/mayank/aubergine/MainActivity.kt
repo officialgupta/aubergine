@@ -103,6 +103,27 @@ class MainActivity : AppCompatActivity() {
         return image
     }
 
+    private fun dispatchTakePictureIntent() {
+        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        // Ensure that there's a camera activity to handle the intent
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            // Create the File where the photo should go
+            var photoFile: File? = null
+            try {
+                photoFile = createImageFile();
+            } catch (ex: IOException) {
+                Log.e("balls", "createimage doesn't help")
+            }
+            // Continue only if the File was successfully created
+            if (photoFile != null) {
+                val photoURI = FileProvider.getUriForFile(this,
+                "com.mayank.aubergine.fileprovider",
+                photoFile);
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+                startActivityForResult(takePictureIntent, CAP_CODE);
+            }
+        }
+    }
 
     fun captureTime(){
 //        Log.d("captureTime", "niceTime")
@@ -121,7 +142,7 @@ class MainActivity : AppCompatActivity() {
 //
 //            Log.d("captureTime", "2")
 //        }
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        /*val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
 
         val imageFile = File(getExternalFilesDir(null), "image.jpg")
         if (imageFile != null) {
@@ -137,10 +158,11 @@ class MainActivity : AppCompatActivity() {
 
             intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
             startActivityForResult(intent, CAP_CODE)
-            intent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, photoURI)
         }
 
         startActivityForResult(intent, CAP_CODE)
+        */
+        dispatchTakePictureIntent()
     }
 
     fun scanTime() {
@@ -154,9 +176,9 @@ class MainActivity : AppCompatActivity() {
 
     public override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
         Log.d("onActivityResult", "1")
+        super.onActivityResult(requestCode, resultCode, data)
 
         if(resultCode != RESULT_CANCELED && data != null && resultCode == RESULT_OK && resultCode != null) {
-            super.onActivityResult(requestCode, resultCode, data)
 
             if (requestCode == CAP_CODE) {
                 val file = File(getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString() + "/image.jpeg")
