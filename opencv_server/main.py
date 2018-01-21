@@ -44,8 +44,9 @@ def get_handwriting(img_bytes):
     return r.content
 
 def str_from_b64(b64str):
-    b64str_ = b64str + ('=' * (-len(b64str) % 4))
-    return base64.b64decode(b64str_)
+    print("Base64 str end {}".format(b64str[-7:]))
+    b64str_ = b64str + '==='
+    return base64.b64decode(b64str_.encode("utf-8"), '-_')
 
 def cv_image_from_str(str_):
     np_arr = np.fromstring(str_, np.uint8)
@@ -61,7 +62,11 @@ def create_note(cursor):
 
     _, des = orb.detectAndCompute(img, None)
     des_p = cPickle.dumps(des)
-    cursor.execute("INSERT INTO notes VALUES ('" + name + "', '" + des_p + "', ?);", [str_img])
+    if 'b' in des_p:
+        idx = des_p.index('b')
+        print(des_p[idx-4:idx+4])
+    print name
+    cursor.execute('INSERT INTO notes VALUES ("' + name + '", ?, ?);', [des_p, str_img])
     return "OK"
 
 @app.route("/initdb")
