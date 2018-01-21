@@ -15,6 +15,7 @@ import com.github.kittinunf.result.Result
 import java.io.*
 import android.annotation.SuppressLint
 import android.util.Base64
+import android.widget.EditText
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -128,7 +129,9 @@ class MainActivity : AppCompatActivity() {
         val b64str = Base64.encodeToString(bytes.toByteArray(), 8)
         Log.d("Base64Conv", b64str)
 
-        Fuel.post("http://52.174.181.163:5001/$endpoint").body("image=$b64str&name=$timeStamp").response { request, response, result ->
+        val noteName: EditText = findViewById(R.id.noteName);
+
+        Fuel.post("http://52.174.181.163:5001/$endpoint").body("image=$b64str&name=${noteName.text}").response { request, response, result ->
             //do something with response
             when (result) {
                 is Result.Failure -> {
