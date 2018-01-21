@@ -54,8 +54,8 @@ def cv_image_from_str(str_):
 
 @database_connection
 def fetch_des_db(cursor):
-    cursor.execute("SELECT name, pickled_des FROM notes;")
-    return [(name, cPickle.loads(s)) for (name, s) in cursor.fetchall()]
+    cursor.execute("SELECT name, pickled_des, annotations FROM notes;")
+    return [(name, cPickle.loads(s), ann) for (name, s, ann) in cursor.fetchall()]
 
 def compute_num_good(des1, des2):
     bf = cv2.BFMatcher()
@@ -80,14 +80,14 @@ def create_note(cursor):
         idx = des_p.index('b')
         print(des_p[idx-4:idx+4])
     print name
-    cursor.execute('INSERT INTO notes VALUES ("' + name + '", ?, ?);', [des_p, str_img])
+    cursor.execute('INSERT INTO notes VALUES ("' + name + '", ?, ?, "");', [des_p, str_img])
     return "OK"
 
 @app.route("/initdb")
 @database_connection
 def init_db(cursor):
     delete_sql = "DROP TABLE notes;"
-    table_sql = "CREATE TABLE notes (name TEXT PRIMARY KEY, pickled_des TEXT, image BLOB);"
+    table_sql = "CREATE TABLE notes (name TEXT PRIMARY KEY, pickled_des TEXT, image BLOB, annotations TEXT);"
     try:
         cursor.execute(delete_sql)
     except:
@@ -115,7 +115,12 @@ def find_note(cursor):
             max_good = num_good
             goodest_name = name
     print "{}: {}".format(goodest_name, max_good)
-    return goodest_name
+    return goodest_name + ":" + annotations
+
+@app.route("/addannotation/<noteid>/<annotation>")
+@database_connection
+def add_annotation(cursor, noteid, annotation):
+    cursor.execute("UPDATE notes SET annotations=? WHERE name=?;", [annotation, noteid])
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5001)
