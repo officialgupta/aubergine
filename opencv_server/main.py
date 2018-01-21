@@ -114,6 +114,7 @@ def find_note(cursor):
         if num_good > max_good:
             max_good = num_good
             goodest_name = name
+    print "{}: {}".format(goodest_name, max_good)
     return goodest_name
 
 if __name__ == "__main__":
