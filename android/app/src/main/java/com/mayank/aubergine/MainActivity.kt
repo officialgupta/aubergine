@@ -15,6 +15,7 @@ import com.github.kittinunf.result.Result
 import java.io.*
 import android.annotation.SuppressLint
 import android.util.Base64
+import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import java.text.SimpleDateFormat
 import java.util.*
@@ -46,6 +47,18 @@ class MainActivity : AppCompatActivity() {
             override fun onClick(v: View) {
                 // Code here executes on main thread after user presses button
                 scanTime()
+            }
+        })
+
+        val ann_txt : EditText = findViewById(R.id.annotation)
+        val noteid : EditText = findViewById(R.id.noteid)
+        val ann: Button = findViewById(R.id.addannbutton)
+        ann.setOnClickListener(object : View.OnClickListener {
+            override fun onClick(v: View) {
+                if (ann_txt.text.equals("") || noteid.text.equals("")) {
+                    return
+                }
+                addAnnotation(ann_txt.text.toString(), noteid.text.toString())
             }
         })
 
@@ -88,6 +101,27 @@ class MainActivity : AppCompatActivity() {
         // Save a file: path for use with ACTION_VIEW intents
         mCurrentPhotoPath = image.absolutePath
         return image
+    }
+
+    fun addAnnotation(annotation: String, noteid: String) {
+        Fuel.get("http://52.174.181.163:5001/addannotation/$noteid/$annotation").response { request, response, result ->
+            when (result) {
+                is Result.Failure -> {
+                    print("error m9")
+                    Log.d("addAnnotation", "FAILURE")
+                    Log.d("hello", result.toString())
+
+                }
+                is Result.Success -> {
+                    println(response)
+                    Log.d("addAnnotation", response.httpResponseMessage)
+                    val (bytes, error) = result
+                    if (bytes != null) {
+                        println(bytes)
+                    }
+                }
+            }
+        }
     }
 
     fun captureTime(){
@@ -146,6 +180,9 @@ class MainActivity : AppCompatActivity() {
                     val (bytes, error) = result
                     if (bytes != null) {
                         println(bytes)
+                    }
+                    if (endpoint == "findnote") {
+                        response.httpResponseMessage.
                     }
                 }
             }
