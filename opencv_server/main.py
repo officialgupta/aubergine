@@ -1,15 +1,17 @@
 from flask import Flask, request
+import base64
 import sqlite3
 import requests
 import cv2
 import numpy as np
-import cpickle
+import cPickle
 import base64
 
 app = Flask(__name__)
 
 def connect_db():
     conn = sqlite3.connect("notes.db")
+    conn.text_factory = str
     return conn
 
 def database_connection(function):
@@ -37,32 +39,32 @@ def get_handwriting(img_bytes):
         raise Exception("Bad status code from operation location: {}".format(r.status_code))
     return r.content
 
-def cv_image_from_b64_str(b64str):
-    im_bytes = base64.b64decode(b64str)
-    np_arr = np.fromstring(decoded_str, np.uint8)
-    return cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR)
+def str_from_b64(b64str):
+    b64str += '=' * (-len(b64img) % 4)
+    return base64.b64decode(b64str)
 
-@app.route("/")
-def index():
-    return "Hello World"
+def cv_image_from_b64_str(str_):
+    np_arr = np.fromstring(str_, np.uint8)
+    return cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR)
 
 @app.route("/createnote", methods=["POST"])
 @database_connection
 def create_note():
-    img = cv_image_from_b64_st(request.form["image"])
+    str_ = str_from_b64(request.form["image"])
+    img = cv_image_from_b64_str(str_)
     name = request.form["name"]
     orb = cv2.ORB_Create()
 
     _, des = orb.computeAndDetect(img, None)
-    des_p = cpickle.dumps(des)
-    img_p = cpickle.dumps(img)
-
+    des_p = cPickle.dumps(des)
+    cursor.execute("INSERT INTO notes VALUES ('" + name + "', '" + des_p + "', ?);", [decoded_image])
+    return "OK"
 
 @app.route("/initdb")
 @database_connection
 def init_db(cursor):
     delete_sql = "DROP TABLE notes;"
-    table_sql = "CREATE TABLE notes (name TEXT PRIMARY KEY, pickled_des TEXT, pickled_img TEXT);"
+    table_sql = "CREATE TABLE notes (name TEXT PRIMARY KEY, pickled_des TEXT, image BLOB);"
     try:
         cursor.execute(delete_sql)
     except:
@@ -84,4 +86,4 @@ def find_note(cursor):
     pass
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5001)
