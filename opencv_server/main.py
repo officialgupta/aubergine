@@ -52,6 +52,20 @@ def cv_image_from_str(str_):
     np_arr = np.fromstring(str_, np.uint8)
     return cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR)
 
+@database_connection
+def fetch_des_db(cursor):
+    cursor.execute("SELECT name, pickled_des FROM notes;")
+    return [(name, cPickle.loads(s)) for (name, s) in cursor.fetchall()]
+
+def compute_num_good(des1, des2):
+    bf = cv2.BFMatcher()
+    matches = bf.knnMatch(des1, des2, k=2)
+    num_good = 0
+    for m, n in matches:
+        if m.distance < 0.75*n.distance:
+            num_good += 1
+    return num_good
+
 @app.route("/createnote", methods=["POST"])
 @database_connection
 def create_note(cursor):
@@ -85,14 +99,21 @@ def init_db(cursor):
 @database_connection
 def find_note(cursor):
     # init ORB and bfmatcher (eventually FLANN)
-    orb = cv2.ORB_create()
+    orb = orb_f()
     bf = cv2.BFMatcher()
     # computeanddetect (descriptors)
     _, des = orb.detectAndCompute(img, None)
     # fetch all previous des from database
+    des_list = fetch_des_db()
     # match for each and compute #good
-    # return id with most good
-    pass
+    max_good = -1
+    goodest_name = ""
+    for name, des_db in des_list:
+        num_good = compute_num_good(des, des_db)
+        if num_good > max_good:
+            max_good = num_good
+            goodest_name = name
+    return goodest_name
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5001)
