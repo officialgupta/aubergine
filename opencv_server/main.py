@@ -102,6 +102,7 @@ def find_note(cursor):
     orb = orb_f()
     bf = cv2.BFMatcher()
     # computeanddetect (descriptors)
+    img = cv_image_from_str(str_from_b64(request.form["image"]))
     _, des = orb.detectAndCompute(img, None)
     # fetch all previous des from database
     des_list = fetch_des_db()
