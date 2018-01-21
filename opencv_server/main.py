@@ -1,10 +1,12 @@
 from flask import Flask, request
+import base64
 import sqlite3
 
 app = Flask(__name__)
 
 def connect_db():
     conn = sqlite3.connect("notes.db")
+    conn.text_factory = str
     return conn
 
 def database_connection(function):
@@ -48,8 +50,10 @@ def init_db(cursor):
 @database_connection
 def create_note(cursor):
     b64img = request.form["image"]
+    b64img += '=' * (-len(b64img) % 4)
+    decoded_image = base64.b64decode(b64img)
     note_name = request.form["name"]
-    cursor.execute("INSERT INTO notes VALUES ('" + note_name + ',' + b64img + "');")
+    cursor.execute("INSERT INTO notes VALUES ('" + note_name + "', ? );", [decoded_image])
     return "OK"
 
 if __name__ == "__main__":
