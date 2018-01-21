@@ -1,6 +1,10 @@
 from flask import Flask, request
 import sqlite3
 import requests
+import cv2
+import numpy as np
+import cpickle
+import base64
 
 app = Flask(__name__)
 
@@ -33,21 +37,32 @@ def get_handwriting(img_bytes):
         raise Exception("Bad status code from operation location: {}".format(r.status_code))
     return r.content
 
+def cv_image_from_b64_str(b64str):
+    im_bytes = base64.b64decode(b64str)
+    np_arr = np.fromstring(decoded_str, np.uint8)
+    return cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR)
+
 @app.route("/")
 def index():
     return "Hello World"
 
-@app.route("/features", methods=["POST"])
-def get_features():
-    # assume that request has base64 encoded jpg
-    b64str = request.form["image"]
-    return b64str
+@app.route("/createnote", methods=["POST"])
+@database_connection
+def create_note():
+    img = cv_image_from_b64_st(request.form["image"])
+    name = request.form["name"]
+    orb = cv2.ORB_Create()
+
+    _, des = orb.computeAndDetect(img, None)
+    des_p = cpickle.dumps(des)
+    img_p = cpickle.dumps(img)
+
 
 @app.route("/initdb")
 @database_connection
 def init_db(cursor):
     delete_sql = "DROP TABLE notes;"
-    table_sql = "CREATE TABLE notes (name TEXT PRIMARY KEY);"
+    table_sql = "CREATE TABLE notes (name TEXT PRIMARY KEY, pickled_des TEXT, pickled_img TEXT);"
     try:
         cursor.execute(delete_sql)
     except:
@@ -55,12 +70,18 @@ def init_db(cursor):
     cursor.execute(table_sql)
     return "OK"
 
-@app.route("/createnote", methods=["POST"])
+@app.route("/findnote", methods=["POST"])
 @database_connection
-def create_note(cursor):
-    b64img = request.form["image"]
-    cursor.execute("INSERT INTO notes VALUES ('" + b64img + "');")
-    return "OK"
+def find_note(cursor):
+    # init ORB and bfmatcher (eventually FLANN)
+    orb = cv2.ORB_create()
+    bf = cv2.BFMatcher()
+    # computeanddetect (descriptors)
+    _, des = orb.computeAndDetect(img, None)
+    # fetch all previous des from database
+    # match for each and compute #good
+    # return id with most good
+    pass
 
 if __name__ == "__main__":
     app.run(debug=True)
