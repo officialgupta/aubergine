@@ -5,9 +5,13 @@ import requests
 import cv2
 import numpy as np
 import cPickle
-import base64
 
 app = Flask(__name__)
+orb_f = None
+try:
+    orb_f = cv2.ORB
+except AttributeError:
+    orb_f = cv2.ORB_create
 
 def connect_db():
     conn = sqlite3.connect("notes.db")
@@ -40,24 +44,24 @@ def get_handwriting(img_bytes):
     return r.content
 
 def str_from_b64(b64str):
-    b64str += '=' * (-len(b64img) % 4)
-    return base64.b64decode(b64str)
+    b64str_ = b64str + ('=' * (-len(b64str) % 4))
+    return base64.b64decode(b64str_)
 
-def cv_image_from_b64_str(str_):
+def cv_image_from_str(str_):
     np_arr = np.fromstring(str_, np.uint8)
     return cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR)
 
 @app.route("/createnote", methods=["POST"])
 @database_connection
-def create_note():
-    str_ = str_from_b64(request.form["image"])
-    img = cv_image_from_b64_str(str_)
+def create_note(cursor):
+    str_img = str_from_b64(request.form["image"])
+    img = cv_image_from_str(str_img)
     name = request.form["name"]
-    orb = cv2.ORB_Create()
+    orb = orb_f()
 
-    _, des = orb.computeAndDetect(img, None)
+    _, des = orb.detectAndCompute(img, None)
     des_p = cPickle.dumps(des)
-    cursor.execute("INSERT INTO notes VALUES ('" + name + "', '" + des_p + "', ?);", [decoded_image])
+    cursor.execute("INSERT INTO notes VALUES ('" + name + "', '" + des_p + "', ?);", [str_img])
     return "OK"
 
 @app.route("/initdb")
@@ -79,7 +83,7 @@ def find_note(cursor):
     orb = cv2.ORB_create()
     bf = cv2.BFMatcher()
     # computeanddetect (descriptors)
-    _, des = orb.computeAndDetect(img, None)
+    _, des = orb.detectAndCompute(img, None)
     # fetch all previous des from database
     # match for each and compute #good
     # return id with most good
