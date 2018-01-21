@@ -109,13 +109,15 @@ def find_note(cursor):
     # match for each and compute #good
     max_good = -1
     goodest_name = ""
-    for name, des_db in des_list:
+    goodest_annotations = ""
+    for name, des_db, annotations in des_list:
         num_good = compute_num_good(des, des_db)
         if num_good > max_good:
             max_good = num_good
             goodest_name = name
+            goodest_annotations = annotations
     print "{}: {}".format(goodest_name, max_good)
-    return goodest_name + ":" + annotations
+    return goodest_name + ":" + goodest_annotations
 
 @app.route("/addannotation/<noteid>/<annotation>")
 def add_annotation(noteid, annotation):
