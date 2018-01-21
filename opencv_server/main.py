@@ -125,6 +125,7 @@ def add_annotation(noteid, annotation):
             cursor = conn.cursor()
             cursor.execute("UPDATE notes SET annotations=? WHERE name=?;", [annotation, noteid])
             conn.commit()
+        return "OK"
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5001)
